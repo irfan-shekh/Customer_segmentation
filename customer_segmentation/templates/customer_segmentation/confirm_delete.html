@@ -1,0 +1,65 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}Confirm Deletion - Record #{{ object.id }}{% endblock %}
+
+{% block content %}
+<section class="hero-wrapper py-4">
+    <div class="container text-center">
+        <h1 class="hero-title fs-2 mb-1">Delete Customer Record</h1>
+        <p class="hero-lead mx-auto mb-0">Confirmation is required to permanently remove record #{{ object.id }}.</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-6">
+                <div class="custom-card p-4 p-md-5 text-center shadow-sm">
+                    <div class="text-danger mb-3">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 3.5rem;"></i>
+                    </div>
+                    
+                    <h4 class="fw-bold text-dark mb-2">Are you sure you want to delete this record?</h4>
+                    <p class="text-muted small mb-4">
+                        This action cannot be undone. Record #{{ object.id }} will be permanently removed from the segmentation archive.
+                    </p>
+                    
+                    <div class="p-3 bg-light rounded-3 text-start mb-4 border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Customer:</span>
+                            <span class="fw-bold small text-dark">{{ object.gender }}, {{ object.age }} yrs</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Profession:</span>
+                            <span class="fw-bold small text-primary">{{ object.profession }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Predicted Segment:</span>
+                            <span class="segment-chip badge-segment-{{ object.predicted_segmentation|lower }} px-2 py-0">
+                                Segment {{ object.predicted_segmentation }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Logged On:</span>
+                            <span class="small text-muted">{{ object.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{% url 'customer_segmentation:segmentation_history' %}" class="btn btn-secondary-custom px-4">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="bi bi-trash-fill me-1"></i> Yes, Delete Permanently
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

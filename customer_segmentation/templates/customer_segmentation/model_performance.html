@@ -1,0 +1,146 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}ML Engine Diagnostics & Evaluation - SegmentPulse ML{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="hero-wrapper py-4">
+    <div class="container">
+        <h1 class="hero-title fs-2 mb-1">Machine Learning Engines & Evaluation</h1>
+        <p class="hero-lead mb-0">Model benchmark comparisons, test accuracy metrics, and feature importance rankings.</p>
+    </div>
+</section>
+
+<!-- Content -->
+<section class="py-5">
+    <div class="container">
+        
+        <!-- Algorithm Evaluation Cards -->
+        <div class="row g-4 mb-5">
+            {% for card in performance_cards %}
+            <div class="col-lg-4 col-md-6">
+                <div class="custom-card p-4 h-100 shadow-sm border-top border-4 {{ card.border_class }}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold text-dark mb-0">{{ card.name }}</h5>
+                        <span class="badge {{ card.badge_class }}">{{ card.tag }}</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        {{ card.description }}
+                    </p>
+                    
+                    <div class="p-3 bg-light rounded-3 mb-3">
+                        {% if card.accuracy %}
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small text-muted">Test Accuracy</span>
+                                <span class="fw-bold {{ card.text_class }}">{{ card.accuracy|floatformat:3 }}</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar {{ card.progress_class }}" data-width="{% widthratio card.accuracy 1 100 %}" aria-valuenow="{% widthratio card.accuracy 1 100 %}"></div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small text-muted">Weighted F1-Score</span>
+                                <span class="fw-bold text-dark">{{ card.f1_score|floatformat:3 }}</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar bg-secondary" data-width="{% widthratio card.f1_score 1 100 %}" aria-valuenow="{% widthratio card.f1_score 1 100 %}"></div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Precision / Recall</span>
+                                <span class="small fw-bold text-muted">{{ card.precision|floatformat:2 }} / {{ card.recall|floatformat:2 }}</span>
+                            </div>
+                        {% else %}
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small text-muted">Silhouette Score</span>
+                                <span class="fw-bold {{ card.text_class }}">{{ card.silhouette_score|floatformat:3 }}</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar {{ card.progress_class }}" data-width="{% widthratio card.silhouette_score 1 100 %}" aria-valuenow="{% widthratio card.silhouette_score 1 100 %}"></div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Target Clusters</span>
+                                <span class="fw-bold text-dark">k = {{ card.n_clusters }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <ul class="list-unstyled small text-muted mb-0">
+                        {% for point in card.points %}
+                        <li><i class="bi bi-check2 text-success me-1"></i> {{ point }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Feature Importance Breakdown & Architecture -->
+        <div class="row g-4">
+            <!-- Feature Importance -->
+            <div class="col-lg-7">
+                <div class="custom-card p-4 shadow-sm h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-bar-chart-steps text-primary me-2"></i> Random Forest Feature Importances
+                        </h5>
+                        <span class="badge bg-light text-muted border">Gini Impurity</span>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Key indicators prioritized by the ensemble model when categorizing customer records into segments:
+                    </p>
+                    
+                    {% if feature_importances %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for item in feature_importances %}
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold small text-dark">{{ item.feature }}</span>
+                                    <span class="small text-muted">{{ item.importance }}%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" data-width="{{ item.importance }}" aria-valuenow="{{ item.importance }}"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted small">No feature importance metrics recorded yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pipeline Architecture -->
+            <div class="col-lg-5">
+                <div class="custom-card p-4 shadow-sm h-100">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-diagram-3-fill text-info me-2"></i> End-to-End Pipeline
+                    </h5>
+                    
+                    <div class="timeline small">
+                        <div class="p-3 bg-light rounded-3 mb-2 border">
+                            <div class="fw-bold text-dark mb-1">1. Ingestion & Preprocessing</div>
+                            <div class="text-muted">Missing value imputation, median filling on continuous metrics, category mapping.</div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 mb-2 border">
+                            <div class="fw-bold text-dark mb-1">2. One-Hot Encoding</div>
+                            <div class="text-muted">Categorical features (Gender, Profession, Spending Score, Marital status) encoded to binary indicators.</div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 mb-2 border">
+                            <div class="fw-bold text-dark mb-1">3. Ensemble Classification</div>
+                            <div class="text-muted">Random Forest predict_proba calculates multi-class confidence scores across A, B, C, D.</div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fw-bold text-dark mb-1">4. Unsupervised Cluster Mapping</div>
+                            <div class="text-muted">KMeans assigns customer to spatial cluster coordinates based on age and household size.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

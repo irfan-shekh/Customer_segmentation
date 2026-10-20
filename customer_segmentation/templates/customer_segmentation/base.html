@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Customer Segmentation AI / ML Studio{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Design System Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Chart.js (for analytics & metric visualizations) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'customer_segmentation:home' %}">
+                <span class="brand-icon">
+                    <i class="bi bi-pie-chart-fill"></i>
+                </span>
+                <span>Segment<span style="color: var(--accent-cyan);">Pulse</span> ML</span>
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'customer_segmentation:home' %}">
+                            <i class="bi bi-person-bounding-box"></i> Segment Profiler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'segmentation_history' %}active{% endif %}" href="{% url 'customer_segmentation:segmentation_history' %}">
+                            <i class="bi bi-clock-history"></i> History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" href="{% url 'customer_segmentation:analytics' %}">
+                            <i class="bi bi-graph-up-arrow"></i> Visual Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'model_performance' %}active{% endif %}" href="{% url 'customer_segmentation:model_performance' %}">
+                            <i class="bi bi-cpu"></i> ML Engines
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-outline-light btn-sm px-3 rounded-pill" href="/admin/" target="_blank">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Flash Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm d-flex align-items-center gap-2 rounded-3 animate-fade-in" role="alert">
+            {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+            {% else %}
+                <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+            {% endif %}
+            <div>{{ message }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Dynamic Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Premium Footer -->
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-5 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="brand-icon">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </span>
+                        <h5 class="text-white fw-bold mb-0">SegmentPulse AI Studio</h5>
+                    </div>
+                    <p class="small text-muted pe-lg-4">
+                        Enterprise customer intelligence & behavioral clustering powered by Random Forest, Decision Trees, and KMeans unsupervised learning.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-dark border border-secondary text-light">Django 4.2+</span>
+                        <span class="badge bg-dark border border-secondary text-light">Scikit-Learn</span>
+                        <span class="badge bg-dark border border-secondary text-light">Pandas</span>
+                        <span class="badge bg-dark border border-secondary text-light">Chart.js</span>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-3 col-6">
+                    <h6>Quick Access</h6>
+                    <a href="{% url 'customer_segmentation:home' %}" class="footer-link">Segment Customer</a>
+                    <a href="{% url 'customer_segmentation:segmentation_history' %}" class="footer-link">Prediction Archive</a>
+                    <a href="{% url 'customer_segmentation:analytics' %}" class="footer-link">Segment Analytics</a>
+                    <a href="{% url 'customer_segmentation:model_performance' %}" class="footer-link">Model Diagnostics</a>
+                </div>
+                
+                <div class="col-lg-4 col-md-3 col-6">
+                    <h6>Segments Classified</h6>
+                    <div class="d-flex flex-column gap-1 small">
+                        <div><span class="badge badge-segment-a me-1">A</span> Elite High-Value VIPs</div>
+                        <div><span class="badge badge-segment-b me-1">B</span> Rising Professionals</div>
+                        <div><span class="badge badge-segment-c me-1">C</span> Household Builders</div>
+                        <div><span class="badge badge-segment-d me-1">D</span> Prudent Savers</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <div>&copy; 2026 Customer Segmentation ML System. All rights reserved.</div>
+                <div class="text-muted small">Designed for High Performance & Predictive Accuracy.</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Application JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

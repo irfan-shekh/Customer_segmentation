@@ -1,0 +1,329 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}Customer Segmentation AI Studio - Predict & Profile{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-wrapper">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="hero-pill">
+                    <i class="bi bi-stars text-warning"></i> Enterprise Machine Learning Studio
+                </div>
+                <h1 class="hero-title mb-3">
+                    Intelligent <span class="hero-gradient-text">Customer Segmentation</span> & Behavioral Intelligence
+                </h1>
+                <p class="hero-lead mb-4">
+                    Instantly profile customer cohorts into 4 strategic tiers using supervised Random Forest classification combined with KMeans unsupervised clustering.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="#profilerCard" class="btn btn-primary-gradient px-4 py-2">
+                        <i class="bi bi-lightning-charge-fill"></i> Launch Profiler
+                    </a>
+                    <a href="{% url 'customer_segmentation:analytics' %}" class="btn btn-secondary-custom px-4 py-2">
+                        <i class="bi bi-pie-chart-fill"></i> View Cohort Analytics
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-5">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="kpi-card text-center p-3">
+                            <div class="text-primary mb-1"><i class="bi bi-people fs-3"></i></div>
+                            <div class="kpi-value text-primary">8,068</div>
+                            <div class="kpi-label">Training Customers</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="kpi-card text-center p-3">
+                            <div class="text-success mb-1"><i class="bi bi-diagram-3 fs-3"></i></div>
+                            <div class="kpi-value text-success">4</div>
+                            <div class="kpi-label">Target Segments</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="kpi-card text-center p-3">
+                            <div class="text-info mb-1"><i class="bi bi-cpu fs-3"></i></div>
+                            <div class="kpi-value text-info">3</div>
+                            <div class="kpi-label">ML Engines Active</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="kpi-card text-center p-3">
+                            <div class="text-warning mb-1"><i class="bi bi-clock-history fs-3"></i></div>
+                            <div class="kpi-value text-warning">{{ total_count|default:"0" }}</div>
+                            <div class="kpi-label">Processed Profiles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Interactive Workspace -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            
+            <!-- Left Column: Form & Persona Presets -->
+            <div class="col-lg-8">
+                <!-- Persona Preset Selector Banner -->
+                <div class="custom-card p-3 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-magic text-primary fs-5"></i> 1-Click Persona Presets
+                        </div>
+                        <span class="text-muted small">Click any preset to auto-fill customer parameters</span>
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="preset-badge" data-preset="executive">
+                            <span>👑</span> Corporate Executive (Seg A)
+                        </button>
+                        <button type="button" class="preset-badge" data-preset="young_pro">
+                            <span>🚀</span> Tech Innovator (Seg B)
+                        </button>
+                        <button type="button" class="preset-badge" data-preset="family">
+                            <span>👨‍👩‍👧‍👦</span> Household Builder (Seg C)
+                        </button>
+                        <button type="button" class="preset-badge" data-preset="conservative">
+                            <span>🛡️</span> Prudent Saver (Seg D)
+                        </button>
+                        <a href="{% url 'customer_segmentation:sample_data' %}" class="preset-badge bg-white border text-primary">
+                            <i class="bi bi-shuffle"></i> Randomize
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Main Profiler Form Card -->
+                <div class="custom-card shadow-sm" id="profilerCard">
+                    <div class="card-header-styled">
+                        <h4 class="card-title-styled">
+                            <i class="bi bi-person-lines-fill text-primary"></i> Customer Feature Matrix
+                        </h4>
+                        <span class="badge bg-light text-secondary border">Real-time Inference</span>
+                    </div>
+                    
+                    <div class="p-4">
+                        <form method="post" id="customerForm">
+                            {% csrf_token %}
+                            
+                            <!-- Section 1: Demographics -->
+                            <div class="form-section-title">
+                                <i class="bi bi-person-badge"></i> 1. Demographic Indicators
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.gender.id_for_label }}" class="form-label">Gender *</label>
+                                    {{ form.gender }}
+                                    {% if form.gender.errors %}
+                                        <div class="text-danger small mt-1">{{ form.gender.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.age.id_for_label }}" class="form-label">Age (18 – 100) *</label>
+                                    {{ form.age }}
+                                    {% if form.age.errors %}
+                                        <div class="text-danger small mt-1">{{ form.age.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.ever_married.id_for_label }}" class="form-label">Ever Married *</label>
+                                    {{ form.ever_married }}
+                                    {% if form.ever_married.errors %}
+                                        <div class="text-danger small mt-1">{{ form.ever_married.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.graduated.id_for_label }}" class="form-label">University Graduated *</label>
+                                    {{ form.graduated }}
+                                    {% if form.graduated.errors %}
+                                        <div class="text-danger small mt-1">{{ form.graduated.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Section 2: Career & Financial Indicators -->
+                            <div class="form-section-title mt-4">
+                                <i class="bi bi-wallet2"></i> 2. Career & Purchasing Power
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="{{ form.profession.id_for_label }}" class="form-label">Profession *</label>
+                                    {{ form.profession }}
+                                    {% if form.profession.errors %}
+                                        <div class="text-danger small mt-1">{{ form.profession.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.work_experience.id_for_label }}" class="form-label">Work Experience (Years)</label>
+                                    {{ form.work_experience }}
+                                    <div class="form-text small">{{ form.work_experience.help_text }}</div>
+                                    {% if form.work_experience.errors %}
+                                        <div class="text-danger small mt-1">{{ form.work_experience.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.spending_score.id_for_label }}" class="form-label">Spending Score *</label>
+                                    {{ form.spending_score }}
+                                    {% if form.spending_score.errors %}
+                                        <div class="text-danger small mt-1">{{ form.spending_score.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Section 3: Household & Classification Details -->
+                            <div class="form-section-title mt-4">
+                                <i class="bi bi-house-heart"></i> 3. Household & Segmentation Category
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.family_size.id_for_label }}" class="form-label">Family Size</label>
+                                    {{ form.family_size }}
+                                    <div class="form-text small">{{ form.family_size.help_text }}</div>
+                                    {% if form.family_size.errors %}
+                                        <div class="text-danger small mt-1">{{ form.family_size.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.var_1.id_for_label }}" class="form-label">Category Code (Var_1)</label>
+                                    {{ form.var_1 }}
+                                    <div class="form-text small">{{ form.var_1.help_text }}</div>
+                                    {% if form.var_1.errors %}
+                                        <div class="text-danger small mt-1">{{ form.var_1.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Machine Learning Algorithm Selector -->
+                            <div class="form-section-title mt-4">
+                                <i class="bi bi-sliders"></i> 4. Classification Algorithm Engine
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="form-check p-3 border rounded-3 flex-fill bg-light">
+                                            <input class="form-check-input ms-1 me-2" type="radio" name="prediction_method" id="methodRF" value="random_forest" checked>
+                                            <label class="form-check-label fw-bold d-block" for="methodRF">
+                                                Random Forest Classifier
+                                                <span class="badge bg-primary ms-1">Recommended</span>
+                                            </label>
+                                            <span class="text-muted small">Multi-tree ensemble with superior generalization and robust confidence scores.</span>
+                                        </div>
+                                        <div class="form-check p-3 border rounded-3 flex-fill bg-light">
+                                            <input class="form-check-input ms-1 me-2" type="radio" name="prediction_method" id="methodDT" value="decision_tree">
+                                            <label class="form-check-label fw-bold d-block" for="methodDT">
+                                                Decision Tree Classifier
+                                            </label>
+                                            <span class="text-muted small">Direct rule-based branching model with fast execution and interpretable nodes.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit & Reset Actions -->
+                            <div class="d-flex flex-wrap align-items-center gap-3 mt-4 pt-3 border-top">
+                                <button type="submit" class="btn btn-primary-gradient px-4 py-2 fs-6" id="submitBtn">
+                                    <i class="bi bi-cpu-fill"></i> Segment Customer
+                                </button>
+                                <button type="reset" class="btn btn-secondary-custom">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reset Form
+                                </button>
+                                <a href="{% url 'customer_segmentation:segmentation_history' %}" class="btn btn-link text-decoration-none ms-auto text-muted">
+                                    <i class="bi bi-journal-text me-1"></i> View Past Predictions &rarr;
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Sidebar & Live Insights -->
+            <div class="col-lg-4">
+                <!-- Segment Overview Cards -->
+                <div class="custom-card mb-4">
+                    <div class="card-header-styled">
+                        <h5 class="card-title-styled">
+                            <i class="bi bi-bookmarks-fill text-primary"></i> Target Segment Guide
+                        </h5>
+                    </div>
+                    <div class="p-3 d-flex flex-column gap-3">
+                        <div class="p-2 rounded-3 segment-pill-subtle-a">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-segment-a">Segment A</span>
+                                <small class="fw-bold">Elite High-Value</small>
+                            </div>
+                            <div class="small">High spenders, executive professionals, luxury loyalty candidates.</div>
+                        </div>
+                        <div class="p-2 rounded-3 segment-pill-subtle-b">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-segment-b">Segment B</span>
+                                <small class="fw-bold">Rising Professionals</small>
+                            </div>
+                            <div class="small">Tech and mid-career earners seeking lifestyle and career growth.</div>
+                        </div>
+                        <div class="p-2 rounded-3 segment-pill-subtle-c">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-segment-c">Segment C</span>
+                                <small class="fw-bold">Household Builders</small>
+                            </div>
+                            <div class="small">Family-centric consumers focused on value bundles and essential savings.</div>
+                        </div>
+                        <div class="p-2 rounded-3 segment-pill-subtle-d">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge badge-segment-d">Segment D</span>
+                                <small class="fw-bold">Prudent Savers</small>
+                            </div>
+                            <div class="small">Budget-conscious consumers who respond best to zero-risk trial offers.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Segmentations Activity Feed -->
+                <div class="custom-card">
+                    <div class="card-header-styled">
+                        <h5 class="card-title-styled">
+                            <i class="bi bi-clock-history text-primary"></i> Recent Profiles
+                        </h5>
+                        <a href="{% url 'customer_segmentation:segmentation_history' %}" class="small text-decoration-none">View All</a>
+                    </div>
+                    <div class="p-2">
+                        {% if recent_segmentations %}
+                            <div class="list-group list-group-flush">
+                                {% for seg in recent_segmentations %}
+                                <a href="{% url 'customer_segmentation:segmentation_detail' seg.id %}" class="list-group-item list-group-item-action border-0 rounded-2 p-2 mb-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ seg.profession }}</div>
+                                            <div class="small text-muted">
+                                                {{ seg.age }}y &bull; {{ seg.gender }} &bull; {{ seg.spending_score }} Spend
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="segment-chip badge-segment-{{ seg.predicted_segmentation|lower }} px-2 py-1">
+                                                Seg {{ seg.predicted_segmentation }}
+                                            </span>
+                                            <div class="small text-muted mt-1">{{ seg.confidence_score|floatformat:2 }} conf</div>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-1 opacity-50"></i>
+                                No customer segmentations recorded yet. Use the profiler to analyze your first customer!
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}Record #{{ segmentation.id }} Details - Segment {{ segmentation.predicted_segmentation }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="hero-wrapper py-4">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <span class="badge bg-light text-dark px-3 py-1 rounded-pill mb-2">Record #{{ segmentation.id }}</span>
+                <h1 class="hero-title fs-2 mb-1">Customer Profile & Segmentation Detail</h1>
+                <p class="hero-lead mb-0">Recorded on {{ segmentation.created_at|date:"F d, Y \a\t H:i" }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'customer_segmentation:segmentation_history' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Archive
+                </a>
+                <a href="{% url 'customer_segmentation:delete_segmentation' segmentation.id %}" class="btn btn-danger btn-sm px-3 rounded-pill">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            
+            <!-- Left Column: Customer Attributes -->
+            <div class="col-lg-5">
+                <!-- Segment Badge Card -->
+                <div class="custom-card text-center p-4 mb-4 shadow-sm">
+                    <div class="segment-chip-lg badge-segment-{{ segmentation.predicted_segmentation|lower }} d-inline-block mb-3">
+                        Segment {{ segmentation.predicted_segmentation }}
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1">{{ insights.name }}</h4>
+                    <p class="text-muted small mb-3">{{ insights.persona }}</p>
+                    
+                    <div class="p-3 bg-light rounded-3 text-start mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small text-muted">Model Confidence</span>
+                            <span class="small fw-bold text-dark">{{ segmentation.confidence_score|floatformat:2 }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" data-width="{% widthratio segmentation.confidence_score 1 100 %}" aria-valuenow="{% widthratio segmentation.confidence_score 1 100 %}"></div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 text-center small">
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted">Prediction Engine</div>
+                                <div class="fw-bold text-dark">{{ segmentation.prediction_method|title }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted">KMeans Cluster</div>
+                                <div class="fw-bold text-primary">#{{ segmentation.cluster_id|default:"1" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attributes Table -->
+                <div class="custom-card p-4 shadow-sm">
+                    <h5 class="fw-bold text-dark mb-3">Customer Attributes</h5>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tbody>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Gender / Age</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.gender }}, {{ segmentation.age }} years</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Marital Status</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.ever_married }}</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Graduated College</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.graduated }}</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Profession</td>
+                                <td class="fw-bold text-primary py-2 text-end">{{ segmentation.profession }}</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Work Experience</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.work_experience|default:"0" }} years</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Spending Score</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.spending_score }}</td>
+                            </tr>
+                            <tr class="border-bottom">
+                                <td class="text-muted py-2">Family Size</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.family_size|default:"1" }} members</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted py-2">Category Code (Var_1)</td>
+                                <td class="fw-bold text-dark py-2 text-end">{{ segmentation.var_1|default:"Cat_4" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column: Tailored Playbook -->
+            <div class="col-lg-7">
+                <div class="custom-card p-4 shadow-sm">
+                    <h4 class="fw-bold text-dark mb-3">Recommended Strategy & Insights</h4>
+                    
+                    <div class="p-3 rounded-3 mb-3" style="background-color: var(--surface-alt); border-left: 4px solid var(--primary);">
+                        <h6 class="fw-bold text-dark mb-1">Behavioral Signature</h6>
+                        <p class="small text-muted mb-0">{{ insights.characteristics }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-dark mb-2">Recommended Marketing Strategy</h6>
+                        <p class="text-secondary small">{{ insights.marketing_strategy }}</p>
+                    </div>
+
+                    <div class="p-3 rounded-3 bg-light border mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="fw-bold text-dark">High-Priority Action</span>
+                        </div>
+                        <div class="small text-muted">{{ insights.key_action }}</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-dark mb-2">Optimal Engagement Channels</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for channel in insights.channels %}
+                            <span class="badge bg-white border text-dark px-3 py-2 rounded-pill shadow-sm">
+                                <i class="bi bi-check2 text-primary me-1"></i> {{ channel }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 pt-3 border-top mt-4">
+                        <a href="{% url 'customer_segmentation:segmentation_history' %}" class="btn btn-secondary-custom">
+                            &larr; Back to History
+                        </a>
+                        <a href="{% url 'customer_segmentation:home' %}" class="btn btn-primary-gradient ms-auto">
+                            <i class="bi bi-plus-circle me-1"></i> New Prediction
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}

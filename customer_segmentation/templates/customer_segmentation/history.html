@@ -1,0 +1,205 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}Prediction Archive & History - SegmentPulse ML{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="hero-wrapper py-4">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h1 class="hero-title fs-2 mb-1">Customer Segmentation Archive</h1>
+                <p class="hero-lead mb-0">Search, filter, and audit all historic ML customer classification records.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'customer_segmentation:export_history_csv' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                    <i class="bi bi-download me-1"></i> Export to CSV
+                </a>
+                <a href="{% url 'customer_segmentation:home' %}" class="btn btn-primary-gradient btn-sm px-3 rounded-pill">
+                    <i class="bi bi-plus-lg me-1"></i> New Segmentation
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filter Toolbar & Table -->
+<section class="py-5">
+    <div class="container">
+        
+        <!-- Controls Bar -->
+        <div class="custom-card p-3 mb-4 shadow-sm">
+            <div class="row g-3 align-items-center">
+                <!-- Segment Filter Buttons -->
+                <div class="col-lg-6">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="small fw-bold text-muted me-1">Segment:</span>
+                        <a href="{% url 'customer_segmentation:segmentation_history' %}" 
+                           class="btn btn-sm {% if not active_segment %}btn-dark{% else %}btn-outline-secondary{% endif %} rounded-pill">
+                            All ({{ total_count }})
+                        </a>
+                        <a href="?segment=A{% if search_q %}&q={{ search_q }}{% endif %}" 
+                           class="btn btn-sm {% if active_segment == 'A' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill">
+                            Segment A
+                        </a>
+                        <a href="?segment=B{% if search_q %}&q={{ search_q }}{% endif %}" 
+                           class="btn btn-sm {% if active_segment == 'B' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill">
+                            Segment B
+                        </a>
+                        <a href="?segment=C{% if search_q %}&q={{ search_q }}{% endif %}" 
+                           class="btn btn-sm {% if active_segment == 'C' %}btn-info text-white{% else %}btn-outline-info{% endif %} rounded-pill">
+                            Segment C
+                        </a>
+                        <a href="?segment=D{% if search_q %}&q={{ search_q }}{% endif %}" 
+                           class="btn btn-sm {% if active_segment == 'D' %}btn-warning text-dark{% else %}btn-outline-warning{% endif %} rounded-pill">
+                            Segment D
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Search Input Form -->
+                <div class="col-lg-6">
+                    <form method="get" class="d-flex gap-2 justify-content-lg-end">
+                        {% if active_segment %}
+                            <input type="hidden" name="segment" value="{{ active_segment }}">
+                        {% endif %}
+                        <div class="input-group input-group-sm" style="max-width: 320px;">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" name="q" class="form-control border-start-0 ps-0" 
+                                   placeholder="Search by profession..." value="{{ search_q }}">
+                            <button class="btn btn-primary" type="submit">Filter</button>
+                            {% if search_q %}
+                            <a href="{% url 'customer_segmentation:segmentation_history' %}{% if active_segment %}?segment={{ active_segment }}{% endif %}" 
+                               class="btn btn-outline-secondary" title="Clear search">
+                                <i class="bi bi-x"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Data Table Card -->
+        <div class="custom-card shadow-sm overflow-hidden">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Demographics</th>
+                            <th>Status & Degree</th>
+                            <th>Profession</th>
+                            <th>Experience</th>
+                            <th>Spending</th>
+                            <th>Family</th>
+                            <th>Segment</th>
+                            <th>Confidence</th>
+                            <th>Method</th>
+                            <th>Timestamp</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if page_obj %}
+                            {% for seg in page_obj %}
+                            <tr>
+                                <td class="fw-bold text-secondary">#{{ seg.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ seg.gender }}</div>
+                                    <div class="small text-muted">{{ seg.age }} years old</div>
+                                </td>
+                                <td>
+                                    <span class="small d-block">Married: <strong>{{ seg.ever_married }}</strong></span>
+                                    <span class="small d-block text-muted">Grad: {{ seg.graduated }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ seg.profession }}</span>
+                                </td>
+                                <td>{{ seg.work_experience|default:"0" }} yrs</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ seg.spending_score }}</span>
+                                </td>
+                                <td>{{ seg.family_size|default:"1" }}</td>
+                                <td>
+                                    <span class="segment-chip badge-segment-{{ seg.predicted_segmentation|lower }} px-2 py-1">
+                                        Segment {{ seg.predicted_segmentation }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="mini-progress">
+                                            <div class="mini-progress-bar" data-width="{% widthratio seg.confidence_score 1 100 %}"></div>
+                                        </div>
+                                        <span class="small text-muted">{{ seg.confidence_score|floatformat:2 }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-muted border">{{ seg.prediction_method|title }}</span>
+                                </td>
+                                <td class="small text-muted">{{ seg.created_at|date:"M d, Y H:i" }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'customer_segmentation:segmentation_detail' seg.id %}" 
+                                           class="btn btn-outline-primary" title="View details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'customer_segmentation:delete_segmentation' seg.id %}" 
+                                           class="btn btn-outline-danger" title="Delete record">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="12" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                                    No customer records matched your query.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="small text-muted">
+                    Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ filtered_count }} records)
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if active_segment %}&segment={{ active_segment }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">
+                                &laquo; Prev
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if active_segment %}&segment={{ active_segment }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}">
+                                Next &raquo;
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+{% endblock %}

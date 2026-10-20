@@ -1,0 +1,357 @@
+{% extends 'customer_segmentation/base.html' %}
+{% load static %}
+
+{% block title %}Cohort Analytics & Insights - SegmentPulse ML{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="hero-wrapper py-4">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h1 class="hero-title fs-2 mb-1">Customer Cohort Analytics</h1>
+                <p class="hero-lead mb-0">Visual distribution analysis of segmented customers across demographic and behavioral dimensions.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'customer_segmentation:export_history_csv' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                    <i class="bi bi-download me-1"></i> Export Dataset (CSV)
+                </a>
+                <a href="{% url 'customer_segmentation:home' %}" class="btn btn-primary-gradient btn-sm px-3 rounded-pill">
+                    <i class="bi bi-plus-lg me-1"></i> New Prediction
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- KPI Metrics Grid -->
+<section class="py-4">
+    <div class="container">
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-sm-6">
+                <div class="kpi-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="kpi-label">Total Predictions</div>
+                        <div class="kpi-icon-box bg-primary-subtle text-primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value text-primary">{{ total_segmentations }}</div>
+                    <div class="small text-muted">Total classified profiles</div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-sm-6">
+                <div class="kpi-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="kpi-label">Avg Confidence</div>
+                        <div class="kpi-icon-box bg-success-subtle text-success">
+                            <i class="bi bi-patch-check-fill"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value text-success">
+                        {% if avg_confidence %}{{ avg_confidence|floatformat:2 }}{% else %}0.00{% endif %}
+                    </div>
+                    <div class="small text-muted">Across all predictions</div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-sm-6">
+                <div class="kpi-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="kpi-label">Average Customer Age</div>
+                        <div class="kpi-icon-box bg-info-subtle text-info">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value text-info">
+                        {% if avg_age %}{{ avg_age|floatformat:0 }} yrs{% else %}--{% endif %}
+                    </div>
+                    <div class="small text-muted">Cohort age mean</div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-sm-6">
+                <div class="kpi-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="kpi-label">Avg Experience</div>
+                        <div class="kpi-icon-box bg-warning-subtle text-warning">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value text-warning">
+                        {% if avg_experience %}{{ avg_experience|floatformat:1 }}y{% else %}--{% endif %}
+                    </div>
+                    <div class="small text-muted">Years in workforce</div>
+                </div>
+            </div>
+        </div>
+
+        {% if total_segmentations > 0 %}
+        <!-- Charts Grid -->
+        <div class="row g-4 mb-4">
+            <!-- Segment Distribution Chart -->
+            <div class="col-lg-6">
+                <div class="custom-card p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-pie-chart-fill text-primary me-2"></i> Segment Distribution
+                        </h5>
+                        <span class="badge bg-light text-muted border">Target Clusters</span>
+                    </div>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="segmentChart"></canvas>
+                    </div>
+                    <div class="row g-2 mt-3 pt-3 border-top text-center small">
+                        {% for seg in segment_distribution %}
+                        <div class="col-3">
+                            <div class="fw-bold segment-chip badge-segment-{{ seg.predicted_segmentation|lower }} px-2 py-0">
+                                Seg {{ seg.predicted_segmentation }}
+                            </div>
+                            <div class="mt-1 text-muted">{{ seg.count }} profiles</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spending Score Distribution Chart -->
+            <div class="col-lg-6">
+                <div class="custom-card p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-wallet2 text-success me-2"></i> Spending Score Breakdown
+                        </h5>
+                        <span class="badge bg-light text-muted border">Purchasing Tiers</span>
+                    </div>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                    <div class="row g-2 mt-3 pt-3 border-top text-center small">
+                        {% for sp in spending_distribution %}
+                        <div class="col-4">
+                            <div class="fw-bold text-dark">{{ sp.spending_score }} Spend</div>
+                            <div class="text-muted">{{ sp.count }} customers</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Method Distribution Chart -->
+            <div class="col-lg-6">
+                <div class="custom-card p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-cpu text-info me-2"></i> Machine Learning Engine Usage
+                        </h5>
+                        <span class="badge bg-light text-muted border">Inference Source</span>
+                    </div>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="methodChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profession Distribution Chart -->
+            <div class="col-lg-6">
+                <div class="custom-card p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-bar-chart-fill text-warning me-2"></i> Top Customer Professions
+                        </h5>
+                        <span class="badge bg-light text-muted border">Top 6 Roles</span>
+                    </div>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="professionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Segmentations Quick Table -->
+        <div class="custom-card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-clock-history text-primary me-2"></i> Latest Processed Cohorts
+                </h5>
+                <a href="{% url 'customer_segmentation:segmentation_history' %}" class="btn btn-outline-primary btn-sm">
+                    View Complete History &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer Profile</th>
+                            <th>Profession</th>
+                            <th>Spending Score</th>
+                            <th>Segment</th>
+                            <th>Confidence</th>
+                            <th>Engine</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for seg in recent_segmentations %}
+                        <tr>
+                            <td>#{{ seg.id }}</td>
+                            <td>{{ seg.gender }}, {{ seg.age }}y</td>
+                            <td class="fw-bold text-dark">{{ seg.profession }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ seg.spending_score }}</span>
+                            </td>
+                            <td>
+                                <span class="segment-chip badge-segment-{{ seg.predicted_segmentation|lower }} px-2 py-1">
+                                    Segment {{ seg.predicted_segmentation }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" data-width="{% widthratio seg.confidence_score 1 100 %}"></div>
+                                    </div>
+                                    <span class="small text-muted">{{ seg.confidence_score|floatformat:2 }}</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-secondary border">{{ seg.prediction_method|title }}</span></td>
+                            <td class="small text-muted">{{ seg.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                <a href="{% url 'customer_segmentation:segmentation_detail' seg.id %}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="custom-card text-center p-5 shadow-sm">
+            <i class="bi bi-pie-chart text-muted opacity-50" style="font-size: 4rem;"></i>
+            <h4 class="fw-bold text-dark mt-3">No Analytics Data Yet</h4>
+            <p class="text-muted max-w-md mx-auto mb-4">
+                Run customer profiles from the main dashboard to generate live segment distributions and insights.
+            </p>
+            <a href="{% url 'customer_segmentation:home' %}" class="btn btn-primary-gradient px-4">
+                <i class="bi bi-lightning-charge-fill me-1"></i> Segment First Customer
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{% if total_segmentations > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Segment Distribution Doughnut Chart
+    const segCtx = document.getElementById('segmentChart');
+    if (segCtx) {
+        new Chart(segCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: [{% for seg in segment_distribution %}'Segment {{ seg.predicted_segmentation }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for seg in segment_distribution %}{{ seg.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#10b981', '#6366f1', '#0284c7', '#f59e0b'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '68%'
+            }
+        });
+    }
+
+    // 2. Spending Score Chart
+    const spendCtx = document.getElementById('spendingChart');
+    if (spendCtx) {
+        new Chart(spendCtx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: [{% for sp in spending_distribution %}'{{ sp.spending_score }} Spend'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for sp in spending_distribution %}{{ sp.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#4f46e5', '#06b6d4', '#f43f5e'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // 3. Engine Usage Bar Chart
+    const methodCtx = document.getElementById('methodChart');
+    if (methodCtx) {
+        new Chart(methodCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [{% for m in method_distribution %}'{{ m.prediction_method|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Predictions Run',
+                    data: [{% for m in method_distribution %}{{ m.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: '#6366f1',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 4. Professions Bar Chart
+    const profCtx = document.getElementById('professionChart');
+    if (profCtx) {
+        new Chart(profCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [{% for p in profession_distribution %}'{{ p.profession }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Customers',
+                    data: [{% for p in profession_distribution %}{{ p.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: '#0ea5e9',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
